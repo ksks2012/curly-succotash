@@ -18,15 +18,7 @@
 # Golang Package
 
 ```
-go get github.com/gin-gonic/gin
-go get github.com/mattn/go-sqlite3
-go get github.com/jung-kurt/gofpdf
-go get github.com/gin-gonic/gin
-go get github.com/mattn/go-sqlite3
-go get gopkg.in/natefinch/lumberjack.v2
-go get github.com/fsnotify/fsnotify
-go get github.com/spf13/viper
-<!-- go get github.com/jinzhu/gorm -->
+go mod tidy
 ```
 
 # Go generate
