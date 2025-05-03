@@ -34,7 +34,7 @@ type Game struct {
 // Card represents a card entry
 type Card struct {
 	Model
-	GameID      int64  `gorm:"not null;index" json:"game_id"`
+	GameID      int    `gorm:"not null;index" json:"game_id"`
 	Name        string `gorm:"type:text;not null" json:"name"`
 	Description string `gorm:"type:text;not null" json:"description"`
 	Effect      string `gorm:"type:text;not null" json:"effect"`

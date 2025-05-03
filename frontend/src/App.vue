@@ -10,7 +10,7 @@
       </div>
       <div class="mb-4">
         <label class="block text-sm font-medium">Number of Cards</label>
-        <input v-model.number="form.cardCount" type="number" min="1" max="20" class="w-full p-2 border rounded" required />
+        <input v-model.number="form.card_count" type="number" min="1" max="20" class="w-full p-2 border rounded" required />
       </div>
       <div class="mb-4">
         <label class="block text-sm font-medium">Game Style</label>
@@ -43,7 +43,7 @@ export default {
     return {
       form: {
         theme: '',
-        cardCount: 10,
+        card_count: 10,
         style: 'simple',
       },
       cards: [],
@@ -53,7 +53,7 @@ export default {
   methods: {
     async generateGame() {
       try {
-        const response = await fetch('http://localhost:8080/api/generate', {
+        const response = await fetch('http://localhost:8080/api/v1/generate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(this.form),

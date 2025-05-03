@@ -8,9 +8,9 @@ type AppSettingS struct {
 	RunMode      string
 	ReadTimeout  time.Duration
 	WriteTimeout time.Duration
-	LogSavePath string
-	LogFileName string
-	LogFileExt string
+	LogSavePath  string
+	LogFileName  string
+	LogFileExt   string
 }
 
 type DatabaseSettingS struct {
@@ -25,6 +25,13 @@ type DatabaseSettingS struct {
 	ParseTime    bool
 	MaxIdleConns int
 	MaxOpenConns int
+}
+
+type ServerSettingS struct {
+	RunMode      string
+	HttpPort     string
+	ReadTimeout  time.Duration
+	WriteTimeout time.Duration
 }
 
 var sections = make(map[string]interface{})

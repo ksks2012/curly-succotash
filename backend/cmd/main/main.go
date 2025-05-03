@@ -4,11 +4,15 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"os/signal"
 	"strings"
+	"time"
 
+	"github.com/gin-gonic/gin"
 	"golang.org/x/sys/unix"
 	"gopkg.in/natefinch/lumberjack.v2"
 
@@ -16,6 +20,7 @@ import (
 	"curly-succotash/backend/internal/model"
 	"curly-succotash/backend/pkg/logger"
 	"curly-succotash/backend/pkg/setting"
+	"curly-succotash/backend/routers"
 )
 
 var (
@@ -51,11 +56,49 @@ func init() {
 
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
-	global.Logger.Infof(ctx, "db_lock")
+	defer cancel()
+
+	// Set Gin mode
+	gin.SetMode(global.AppSetting.RunMode)
+
+	// Initialize router
+	router := routers.NewRouter()
+
+	// Create HTTP server
+	s := &http.Server{
+		Addr:           fmt.Sprintf(":%s", global.ServerSetting.HttpPort),
+		Handler:        router,
+		ReadTimeout:    10 * time.Second,
+		WriteTimeout:   10 * time.Second,
+		MaxHeaderBytes: 1 << 20,
+	}
+
+	// Start server in a goroutine
+	go func() {
+		global.Logger.Infof(ctx, "Starting server on port %d", global.ServerSetting.HttpPort)
+		if err := s.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			global.Logger.Fatalf(ctx, "Failed to start server: %v", err)
+		}
+	}()
+
+	// Setup signal handling
 	stopChannel := make(chan os.Signal, 1)
 	signal.Notify(stopChannel, os.Interrupt, unix.SIGTERM)
 
-	cancel()
+	// Wait for shutdown signal
+	<-stopChannel
+	global.Logger.Infof(ctx, "Shutting down server")
+
+	// Create a context for graceful shutdown
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer shutdownCancel()
+
+	// Shutdown server
+	if err := s.Shutdown(shutdownCtx); err != nil {
+		global.Logger.Errorf(ctx, "Server shutdown failed: %v", err)
+	}
+
+	global.Logger.Infof(ctx, "Server stopped")
 }
 
 func setupFlag() error {
@@ -76,6 +119,10 @@ func setupSetting() error {
 		return err
 	}
 	err = s.ReadSection("Database", &global.DatabaseSetting)
+	if err != nil {
+		return err
+	}
+	err = s.ReadSection("Server", &global.ServerSetting)
 	if err != nil {
 		return err
 	}
