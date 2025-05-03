@@ -1,0 +1,18 @@
+App:
+  RunMode: debug
+  ReadTimeout: 60
+  WriteTimeout: 60
+  LogSavePath: storage/logs
+  LogFileName: app
+  LogFileExt: .log
+Database:
+  DBType: sqlite3
+  UserName: XXX
+  Password: XXX
+  Host: 127.0.0.1
+  DBName: ${DB_NAME}
+  TablePrefix: ${PREFIX_TABLE_NAME}
+  Charset: utf8
+  ParseTime: True
+  MaxIdleConns: 10
+  MaxOpenConns: 30

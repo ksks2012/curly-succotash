@@ -1,5 +1,7 @@
 **/rt-sandbox/**
+**/mysql/**
 
 *.pdf
 *.log
 *.db
+*.tmp
