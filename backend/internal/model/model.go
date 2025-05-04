@@ -8,18 +8,21 @@ import (
 	"curly-succotash/backend/global"
 	"curly-succotash/backend/pkg/setting"
 
-	"github.com/jinzhu/gorm"
-	_ "github.com/mattn/go-sqlite3"
+	"github.com/go-gormigrate/gormigrate/v2"
+	"gorm.io/driver/mysql"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // Model defines the common fields for all models
 type Model struct {
-	ID         uint32 `gorm:"primary_key" json:"id"`
+	ID         uint32 `gorm:"primaryKey" json:"id"`
 	CreatedBy  string `json:"created_by"`
 	ModifiedBy string `json:"modified_by"`
 	CreatedOn  uint32 `json:"created_on"`
 	ModifiedOn uint32 `json:"modified_on"`
-	DeletedOn  uint32 `json:"deleted_on"`
+	DeletedOn  uint32 `gorm:"index" json:"deleted_on"`
 	IsDel      uint8  `json:"is_del"`
 }
 
@@ -43,7 +46,7 @@ type Card struct {
 
 // Meta represents a key-value pair in the meta table
 type Meta struct {
-	Key   string `gorm:"primary_key" json:"key"`
+	Key   string `gorm:"primaryKey" json:"key"`
 	Value int64  `gorm:"not null" json:"value"`
 }
 
@@ -55,16 +58,16 @@ func NewDBEngine(databaseSetting *setting.DatabaseSettingS) (*gorm.DB, error) {
 	// Open database connection based on DBType
 	switch databaseSetting.DBType {
 	case "sqlite3":
-		db, err = gorm.Open("sqlite3", databaseSetting.Path+"?_foreign_keys=on")
+		db, err = gorm.Open(sqlite.Open(databaseSetting.Path+"?_foreign_keys=on"), &gorm.Config{})
 	case "mysql", "mariadb":
 		dsn := fmt.Sprintf(
-			"%s:%s@tcp(%s)/%s?charset=utf8&parseTime=True&loc=Local",
+			"%s:%s@tcp(%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
 			databaseSetting.UserName,
 			databaseSetting.Password,
 			databaseSetting.Host,
 			databaseSetting.DBName,
 		)
-		db, err = gorm.Open("mysql", dsn)
+		db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	default:
 		return nil, fmt.Errorf("unsupported database type: %s", databaseSetting.DBType)
 	}
@@ -74,113 +77,124 @@ func NewDBEngine(databaseSetting *setting.DatabaseSettingS) (*gorm.DB, error) {
 
 	// Set GORM configurations
 	if global.AppSetting.RunMode == "debug" {
-		db.LogMode(true)
+		db = db.Debug()
 	}
-	db.SingularTable(true)
-	db.Callback().Create().Replace("gorm:update_time_stamp", updateTimeStampForCreateCallback)
-	db.Callback().Update().Replace("gorm:update_time_stamp", updateTimeStampForUpdateCallback)
-	db.Callback().Delete().Replace("gorm:delete", deleteCallback)
-	db.DB().SetMaxIdleConns(databaseSetting.MaxIdleConns)
-	db.DB().SetMaxOpenConns(databaseSetting.MaxOpenConns)
+
+	// Set connection pool
+	sqlDB, err := db.DB()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get sql.DB: %s", err)
+	}
+	sqlDB.SetMaxIdleConns(databaseSetting.MaxIdleConns)
+	sqlDB.SetMaxOpenConns(databaseSetting.MaxOpenConns)
+
+	// Register callbacks
+	db.Callback().Create().Before("gorm:create").Register("app:update_time_stamp", updateTimeStampForCreateCallback)
+	db.Callback().Update().Before("gorm:update").Register("app:update_time_stamp", updateTimeStampForUpdateCallback)
+	db.Callback().Delete().Before("gorm:delete").Register("app:soft_delete", softDeleteCallback)
 
 	// Apply migrations
 	if err := applyMigrations(db); err != nil {
-		db.Close()
+		sqlDB.Close()
 		return nil, fmt.Errorf("failed to apply migrations: %s", err)
 	}
 
 	return db, nil
 }
 
-// applyMigrations runs GORM AutoMigrate for models
+// applyMigrations runs gormigrate migrations
 func applyMigrations(db *gorm.DB) error {
 	ctx := context.Background()
 	global.Logger.Infof(ctx, "Applying database migrations")
 
-	// AutoMigrate tables
-	if err := db.AutoMigrate(&Game{}, &Card{}, &Meta{}).Error; err != nil {
-		return fmt.Errorf("failed to auto-migrate tables: %s", err)
+	// Define migrations
+	migrator := gormigrate.New(db, gormigrate.DefaultOptions, []*gormigrate.Migration{
+		{
+			ID: "20250503120000_create_tables",
+			Migrate: func(tx *gorm.DB) error {
+				// Create games, cards, and meta tables
+				if err := tx.Migrator().AutoMigrate(&Game{}, &Card{}, &Meta{}); err != nil {
+					return fmt.Errorf("failed to create tables: %s", err)
+				}
+				// Add foreign key for cards.game_id (MySQL-specific)
+				if tx.Dialector.Name() == "mysql" {
+					return tx.Exec("ALTER TABLE cards ADD CONSTRAINT fk_cards_game_id FOREIGN KEY (game_id) REFERENCES games(id)").Error
+				}
+				return nil
+			},
+			Rollback: func(tx *gorm.DB) error {
+				// Drop tables in reverse order
+				return tx.Migrator().DropTable("cards", "games", "meta")
+			},
+		},
+	})
+
+	// Run migrations
+	if err := migrator.Migrate(); err != nil {
+		return fmt.Errorf("failed to run migrations: %s", err)
 	}
-	global.Logger.Infof(ctx, "Successfully migrated tables: game, card, meta")
+	global.Logger.Infof(ctx, "Successfully applied migrations")
 
 	// Verify table existence
-	type TableCount struct {
-		Count int
+	var tableCount int64
+	query := "SELECT count(*) FROM sqlite_master WHERE type='table' AND name IN ('games', 'cards', 'meta')"
+	if db.Dialector.Name() == "mysql" {
+		query = "SELECT count(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name IN ('games', 'cards', 'meta')"
 	}
-	var result TableCount
-	err := db.Raw("SELECT count(*) AS count FROM sqlite_master WHERE type='table' AND name IN ('game', 'card', 'meta')").Scan(&result).Error
-	if err != nil {
+	if err := db.Raw(query).Scan(&tableCount).Error; err != nil {
 		return fmt.Errorf("failed to verify tables: %s", err)
 	}
-	if result.Count != 3 {
-		return fmt.Errorf("expected 3 tables, found %d", result.Count)
+	if tableCount != 3 {
+		return fmt.Errorf("expected 3 tables, found %d", tableCount)
 	}
-	global.Logger.Infof(ctx, "Verified tables exist: game, card, meta")
+	global.Logger.Infof(ctx, "Verified tables exist: games, cards, meta")
 
 	return nil
 }
 
 // updateTimeStampForCreateCallback sets CreatedOn and ModifiedOn on create
-func updateTimeStampForCreateCallback(scope *gorm.Scope) {
-	if !scope.HasError() {
-		nowTime := time.Now().Unix()
-		if createTimeField, ok := scope.FieldByName("CreatedOn"); ok {
-			if createTimeField.IsBlank {
-				_ = createTimeField.Set(nowTime)
-			}
+func updateTimeStampForCreateCallback(db *gorm.DB) {
+	if db.Error != nil {
+		return
+	}
+	nowTime := uint32(time.Now().Unix())
+	if _, ok := db.Statement.Schema.FieldsByName["CreatedOn"]; ok {
+		if db.Statement.ReflectValue.FieldByName("CreatedOn").IsZero() {
+			db.Statement.SetColumn("CreatedOn", nowTime)
 		}
-		if modifyTimeField, ok := scope.FieldByName("ModifiedOn"); ok {
-			if modifyTimeField.IsBlank {
-				_ = modifyTimeField.Set(nowTime)
-			}
+	}
+	if _, ok := db.Statement.Schema.FieldsByName["ModifiedOn"]; ok {
+		if db.Statement.ReflectValue.FieldByName("ModifiedOn").IsZero() {
+			db.Statement.SetColumn("ModifiedOn", nowTime)
 		}
 	}
 }
 
 // updateTimeStampForUpdateCallback sets ModifiedOn on update
-func updateTimeStampForUpdateCallback(scope *gorm.Scope) {
-	if _, ok := scope.Get("gorm:update_column"); !ok {
-		_ = scope.SetColumn("ModifiedOn", time.Now().Unix())
+func updateTimeStampForUpdateCallback(db *gorm.DB) {
+	if db.Error != nil {
+		return
+	}
+	if _, ok := db.Statement.Context.Value("gorm:update_column").(bool); !ok {
+		db.Statement.SetColumn("ModifiedOn", uint32(time.Now().Unix()))
 	}
 }
 
-// deleteCallback implements soft delete
-func deleteCallback(scope *gorm.Scope) {
-	if !scope.HasError() {
-		var extraOption string
-		if str, ok := scope.Get("gorm:delete_option"); ok {
-			extraOption = fmt.Sprint(str)
-		}
-
-		deletedOnField, hasDeletedOnField := scope.FieldByName("DeletedOn")
-		isDelField, hasIsDelField := scope.FieldByName("IsDel")
-		if !scope.Search.Unscoped && hasDeletedOnField && hasIsDelField {
-			now := time.Now().Unix()
-			scope.Raw(fmt.Sprintf(
-				"UPDATE %v SET %v=%v,%v=%v%v%v",
-				scope.QuotedTableName(),
-				scope.Quote(deletedOnField.DBName),
-				scope.AddToVars(now),
-				scope.Quote(isDelField.DBName),
-				scope.AddToVars(1),
-				addExtraSpaceIfExist(scope.CombinedConditionSql()),
-				addExtraSpaceIfExist(extraOption),
-			)).Exec()
-		} else {
-			scope.Raw(fmt.Sprintf(
-				"DELETE FROM %v%v%v",
-				scope.QuotedTableName(),
-				addExtraSpaceIfExist(scope.CombinedConditionSql()),
-				addExtraSpaceIfExist(extraOption),
-			)).Exec()
+// softDeleteCallback implements soft delete
+func softDeleteCallback(db *gorm.DB) {
+	if db.Error != nil {
+		return
+	}
+	if db.Statement.Schema == nil {
+		return
+	}
+	if !db.Statement.Unscoped {
+		if _, ok := db.Statement.Schema.FieldsByName["DeletedOn"]; ok {
+			if _, ok := db.Statement.Schema.FieldsByName["IsDel"]; ok {
+				now := uint32(time.Now().Unix())
+				db.Statement.AddClause(clause.Set{{Column: clause.Column{Name: "deleted_on"}, Value: now}})
+				db.Statement.AddClause(clause.Set{{Column: clause.Column{Name: "is_del"}, Value: 1}})
+			}
 		}
 	}
-}
-
-// addExtraSpaceIfExist adds a space if the string is non-empty
-func addExtraSpaceIfExist(str string) string {
-	if str != "" {
-		return " " + str
-	}
-	return ""
 }

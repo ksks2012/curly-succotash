@@ -8,7 +8,7 @@ import (
 	"curly-succotash/backend/internal/model"
 	"curly-succotash/backend/pkg/setting"
 
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 )
 
 // ErrDatabasePathRequired indicates database path is not given
@@ -50,7 +50,11 @@ func (eng *SQLiteStorageEngine) Close() error {
 	if eng.DB == nil {
 		return nil
 	}
-	err := eng.DB.Close()
+	sqlDB, err := eng.DB.DB()
+	if err != nil {
+		return fmt.Errorf("failed to get underlying SQL DB: %s", err)
+	}
+	err = sqlDB.Close()
 	eng.DB = nil
 	return err
 }
