@@ -1,6 +1,7 @@
 package model
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -26,7 +27,7 @@ type Model struct {
 type Game struct {
 	Model
 	Theme     string    `gorm:"type:text;not null" json:"theme"`
-	CardCount int       `gorm:"not null" json:"card_count"`
+	CardCount int       `gorm:"column:card_count;not null" json:"card_count"`
 	Style     string    `gorm:"type:text;not null" json:"style"`
 	CreatedAt time.Time `gorm:"type:datetime;not null" json:"created_at"`
 }
@@ -40,13 +41,38 @@ type Card struct {
 	Effect      string `gorm:"type:text;not null" json:"effect"`
 }
 
-// NewDBEngine initializes the SQLite database engine
+// Meta represents a key-value pair in the meta table
+type Meta struct {
+	Key   string `gorm:"primary_key" json:"key"`
+	Value int64  `gorm:"not null" json:"value"`
+}
+
+// NewDBEngine initializes the database engine
 func NewDBEngine(databaseSetting *setting.DatabaseSettingS) (*gorm.DB, error) {
-	db, err := gorm.Open("sqlite3", databaseSetting.DBName)
+	var db *gorm.DB
+	var err error
+
+	// Open database connection based on DBType
+	switch databaseSetting.DBType {
+	case "sqlite3":
+		db, err = gorm.Open("sqlite3", databaseSetting.Path+"?_foreign_keys=on")
+	case "mysql", "mariadb":
+		dsn := fmt.Sprintf(
+			"%s:%s@tcp(%s)/%s?charset=utf8&parseTime=True&loc=Local",
+			databaseSetting.UserName,
+			databaseSetting.Password,
+			databaseSetting.Host,
+			databaseSetting.DBName,
+		)
+		db, err = gorm.Open("mysql", dsn)
+	default:
+		return nil, fmt.Errorf("unsupported database type: %s", databaseSetting.DBType)
+	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database: %s", err)
 	}
 
+	// Set GORM configurations
 	if global.AppSetting.RunMode == "debug" {
 		db.LogMode(true)
 	}
@@ -57,7 +83,41 @@ func NewDBEngine(databaseSetting *setting.DatabaseSettingS) (*gorm.DB, error) {
 	db.DB().SetMaxIdleConns(databaseSetting.MaxIdleConns)
 	db.DB().SetMaxOpenConns(databaseSetting.MaxOpenConns)
 
+	// Apply migrations
+	if err := applyMigrations(db); err != nil {
+		db.Close()
+		return nil, fmt.Errorf("failed to apply migrations: %s", err)
+	}
+
 	return db, nil
+}
+
+// applyMigrations runs GORM AutoMigrate for models
+func applyMigrations(db *gorm.DB) error {
+	ctx := context.Background()
+	global.Logger.Infof(ctx, "Applying database migrations")
+
+	// AutoMigrate tables
+	if err := db.AutoMigrate(&Game{}, &Card{}, &Meta{}).Error; err != nil {
+		return fmt.Errorf("failed to auto-migrate tables: %s", err)
+	}
+	global.Logger.Infof(ctx, "Successfully migrated tables: game, card, meta")
+
+	// Verify table existence
+	type TableCount struct {
+		Count int
+	}
+	var result TableCount
+	err := db.Raw("SELECT count(*) AS count FROM sqlite_master WHERE type='table' AND name IN ('game', 'card', 'meta')").Scan(&result).Error
+	if err != nil {
+		return fmt.Errorf("failed to verify tables: %s", err)
+	}
+	if result.Count != 3 {
+		return fmt.Errorf("expected 3 tables, found %d", result.Count)
+	}
+	global.Logger.Infof(ctx, "Verified tables exist: game, card, meta")
+
+	return nil
 }
 
 // updateTimeStampForCreateCallback sets CreatedOn and ModifiedOn on create

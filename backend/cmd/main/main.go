@@ -17,6 +17,7 @@ import (
 	"gopkg.in/natefinch/lumberjack.v2"
 
 	"curly-succotash/backend/global"
+	"curly-succotash/backend/internal/dao/config"
 	"curly-succotash/backend/internal/model"
 	"curly-succotash/backend/pkg/logger"
 	"curly-succotash/backend/pkg/setting"
@@ -37,21 +38,19 @@ func init() {
 	if err != nil {
 		log.Fatalf("init.setupSetting err: %v", err)
 	}
-
-	err = setupDBEngine()
-	if err != nil {
-		log.Fatalf("init.setupDBEngine err: %v", err)
-	}
-
 	err = setupLogger()
 	if err != nil {
 		log.Fatalf("init.setupLogger err: %v", err)
 	}
 
-	// err = updateDB()
-	// if err != nil {
-	// 	log.Fatalf("init.updateDB err: %v", err)
-	// }
+	err = setupDBEngine()
+	if err != nil {
+		log.Fatalf("init.setupDBEngine err: %v", err)
+	}
+	err = updateDB()
+	if err != nil {
+		log.Fatalf("init.updateDB err: %v", err)
+	}
 }
 
 func main() {
@@ -132,21 +131,21 @@ func setupSetting() error {
 	return nil
 }
 
-// TODO: DB mirgration
-// func updateDB() error {
-// 	var err error
-// 	updateDBSetup := &config.StorageSetup{}
-// 	err = updateDBSetup.NewDBEngine(global.DatabaseSetting)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	if err = updateDBSetup.Instance.Open(); nil != err {
-// 		log.Fatalf("open storage connection failed: %v", err)
-// 		return err
-// 	}
+// DB mirgration
+func updateDB() error {
+	var err error
+	updateDBSetup := &config.StorageSetup{}
+	err = updateDBSetup.NewDBEngine(global.DatabaseSetting)
+	if err != nil {
+		return err
+	}
+	if err = updateDBSetup.Instance.Open(); nil != err {
+		log.Fatalf("open storage connection failed: %v", err)
+		return err
+	}
 
-// 	return nil
-// }
+	return nil
+}
 
 func setupDBEngine() error {
 	var err error
