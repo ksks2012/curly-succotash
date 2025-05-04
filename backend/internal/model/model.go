@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"curly-succotash/backend/global"
+	"curly-succotash/backend/migrations"
 	"curly-succotash/backend/pkg/setting"
 
 	"github.com/go-gormigrate/gormigrate/v2"
@@ -26,6 +27,10 @@ type Model struct {
 	IsDel      uint8  `json:"is_del"`
 }
 
+func (Model) TableName() string {
+	return "model"
+}
+
 // Game represents a board game entry
 type Game struct {
 	Model
@@ -33,6 +38,10 @@ type Game struct {
 	CardCount int       `gorm:"column:card_count;not null" json:"card_count"`
 	Style     string    `gorm:"type:text;not null" json:"style"`
 	CreatedAt time.Time `gorm:"type:datetime;not null" json:"created_at"`
+}
+
+func (Game) TableName() string {
+	return "games"
 }
 
 // Card represents a card entry
@@ -44,10 +53,18 @@ type Card struct {
 	Effect      string `gorm:"type:text;not null" json:"effect"`
 }
 
+func (Card) TableName() string {
+	return "cards"
+}
+
 // Meta represents a key-value pair in the meta table
 type Meta struct {
 	Key   string `gorm:"primaryKey" json:"key"`
 	Value int64  `gorm:"not null" json:"value"`
+}
+
+func (Meta) TableName() string {
+	return "meta"
 }
 
 // NewDBEngine initializes the database engine
@@ -107,29 +124,8 @@ func applyMigrations(db *gorm.DB) error {
 	ctx := context.Background()
 	global.Logger.Infof(ctx, "Applying database migrations")
 
-	// Define migrations
-	migrator := gormigrate.New(db, gormigrate.DefaultOptions, []*gormigrate.Migration{
-		{
-			ID: "20250503120000_create_tables",
-			Migrate: func(tx *gorm.DB) error {
-				// Create games, cards, and meta tables
-				if err := tx.Migrator().AutoMigrate(&Game{}, &Card{}, &Meta{}); err != nil {
-					return fmt.Errorf("failed to create tables: %s", err)
-				}
-				// Add foreign key for cards.game_id (MySQL-specific)
-				if tx.Dialector.Name() == "mysql" {
-					return tx.Exec("ALTER TABLE cards ADD CONSTRAINT fk_cards_game_id FOREIGN KEY (game_id) REFERENCES games(id)").Error
-				}
-				return nil
-			},
-			Rollback: func(tx *gorm.DB) error {
-				// Drop tables in reverse order
-				return tx.Migrator().DropTable("cards", "games", "meta")
-			},
-		},
-	})
-
-	// Run migrations
+	// Run migrations from migrations package
+	migrator := gormigrate.New(db, gormigrate.DefaultOptions, migrations.GetMigrations())
 	if err := migrator.Migrate(); err != nil {
 		return fmt.Errorf("failed to run migrations: %s", err)
 	}
