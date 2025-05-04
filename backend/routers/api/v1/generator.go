@@ -39,7 +39,6 @@ func (g *Generator) Generate(c *gin.Context) {
 
 	// Generate cards
 	cards, err := service.GenerateCards(c, input)
-	// global.Logger.Infof(c, "Generated cards: %v", cards)
 	if err != nil {
 		global.Logger.Errorf(c, "Failed to generate cards: %s", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate cards: " + err.Error()})

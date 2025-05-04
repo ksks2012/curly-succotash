@@ -25,6 +25,7 @@ type DatabaseSettingS struct {
 	ParseTime    bool
 	MaxIdleConns int
 	MaxOpenConns int
+	Path         string
 }
 
 type ServerSettingS struct {
