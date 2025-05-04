@@ -125,6 +125,10 @@ func setupSetting() error {
 	if err != nil {
 		return err
 	}
+	err = s.ReadSection("StoragePath", &global.StoragePathSetting)
+	if err != nil {
+		return err
+	}
 
 	// TODO: run mode
 

@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"curly-succotash/backend/global"
 	"curly-succotash/backend/internal/model"
 
 	"github.com/gin-gonic/gin"
@@ -41,7 +42,7 @@ func GeneratePDF(c *gin.Context, cards []model.Card) (string, error) {
 	}
 
 	// Generate unique PDF path
-	pdfPath := fmt.Sprintf("./files/game_%d.pdf", time.Now().UnixNano())
+	pdfPath := fmt.Sprintf("./%s/game_%d.pdf", global.StoragePathSetting.PDFFoldar, time.Now().UnixNano())
 
 	// Initialize PDF
 	pdf := gofpdf.New("P", "mm", "A4", "")

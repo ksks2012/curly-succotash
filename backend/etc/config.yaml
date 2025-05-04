@@ -1,7 +1,5 @@
 App:
   RunMode: debug
-  ReadTimeout: 60
-  WriteTimeout: 60
   LogSavePath: storage/logs
   LogFileName: app
   LogFileExt: .log
@@ -22,3 +20,5 @@ Server:
   HttpPort: 8080
   ReadTimeout: 60
   WriteTimeout: 60
+StoragePath:
+  PDFFoldar: files

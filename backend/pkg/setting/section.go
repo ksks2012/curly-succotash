@@ -5,12 +5,10 @@ import (
 )
 
 type AppSettingS struct {
-	RunMode      string
-	ReadTimeout  time.Duration
-	WriteTimeout time.Duration
-	LogSavePath  string
-	LogFileName  string
-	LogFileExt   string
+	RunMode     string
+	LogSavePath string
+	LogFileName string
+	LogFileExt  string
 }
 
 type DatabaseSettingS struct {
@@ -33,6 +31,10 @@ type ServerSettingS struct {
 	HttpPort     string
 	ReadTimeout  time.Duration
 	WriteTimeout time.Duration
+}
+
+type StoragePathSettingS struct {
+	PDFFoldar string
 }
 
 var sections = make(map[string]interface{})

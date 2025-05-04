@@ -105,6 +105,6 @@ func (g *Generator) Generate(c *gin.Context) {
 	// Return result
 	c.JSON(http.StatusOK, gin.H{
 		"cards":  cards,
-		"pdfUrl": fmt.Sprintf("http://localhost:8080/files/%s", filepath.Base(pdfPath)),
+		"pdfUrl": fmt.Sprintf("http://localhost:%s/%s/%s", global.ServerSetting.HttpPort, global.StoragePathSetting.PDFFoldar, filepath.Base(pdfPath)),
 	})
 }
