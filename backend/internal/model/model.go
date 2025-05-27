@@ -48,7 +48,7 @@ func (Game) TableName() string {
 // Card represents a card entry
 type Card struct {
 	Model
-	GameID      int    `gorm:"not null;index" json:"game_id"`
+	GameID      uint32 `gorm:"not null;index" json:"game_id"`
 	Type        string `gorm:"type:text;not null" json:"type"` // Added: role, event, item
 	Name        string `gorm:"type:text;not null" json:"name"`
 	Description string `gorm:"type:text;not null" json:"description"`

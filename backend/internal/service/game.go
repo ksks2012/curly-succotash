@@ -25,7 +25,7 @@ func GenerateCards(c *gin.Context, input model.Game) ([]model.Card, error) {
 	for i := 0; i < input.CardCount; i++ {
 		template := cardTemplates[rand.Intn(len(cardTemplates))]
 		cards[i] = model.Card{
-			GameID:      i + 1,
+			GameID:      uint32(i + 1),
 			Name:        fmt.Sprintf("%s %s", input.Theme, template.Name),
 			Description: template.Description,
 			Effect:      template.Effect,
