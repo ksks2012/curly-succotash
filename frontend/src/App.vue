@@ -1,75 +1,36 @@
 <template>
-  <div class="container mx-auto p-4">
-    <h1 class="text-3xl font-bold mb-4">Virtual Board Game Generator</h1>
-    
-    <!-- Input Form -->
-    <form @submit.prevent="generateGame" class="mb-6">
-      <div class="mb-4">
-        <label class="block text-sm font-medium">Board Game Theme</label>
-        <input v-model="form.theme" type="text" placeholder="e.g., Fantasy Adventure" class="w-full p-2 border rounded" required />
-      </div>
-      <div class="mb-4">
-        <label class="block text-sm font-medium">Number of Cards</label>
-        <input v-model.number="form.card_count" type="number" min="1" max="20" class="w-full p-2 border rounded" required />
-      </div>
-      <div class="mb-4">
-        <label class="block text-sm font-medium">Game Style</label>
-        <select v-model="form.style" class="w-full p-2 border rounded" required>
-          <option value="simple">Simple</option>
-          <option value="strategy">Strategy</option>
-        </select>
-      </div>
-      <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Generate Board Game</button>
-    </form>
-
-    <!-- Result Preview -->
-    <div v-if="cards.length">
-      <h2 class="text-2xl font-semibold mb-4">Generated Results</h2>
-      <div class="grid grid-cols-2 gap-4">
-        <div v-for="card in cards" :key="card.id" class="border p-4 rounded">
-          <h3 class="font-bold">{{ card.name }}</h3>
-          <p>{{ card.description }}</p>
-          <p><strong>Effect:</strong> {{ card.effect }}</p>
+  <div class="app-container">
+    <!-- Navigation Bar -->
+    <nav class="bg-blue-600 p-4 shadow-md">
+      <div class="container mx-auto flex justify-between items-center">
+        <h1 class="text-white text-2xl font-bold">{{ $t('appTitle') }}</h1>
+        <div class="flex items-center space-x-4">
+          <router-link to="/" class="text-white hover:text-blue-200">{{ $t('home') }}</router-link>
+          <router-link to="/about" class="text-white hover:text-blue-200">{{ $t('about') }}</router-link>
+          <!-- Language Switcher -->
+          <select v-model="$i18n.locale" class="bg-blue-500 text-white p-2 rounded">
+            <option value="en">English</option>
+            <option value="zh">中文</option>
+          </select>
         </div>
       </div>
-      <a :href="pdfUrl" class="mt-4 inline-block bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">Download PDF</a>
+    </nav>
+    <!-- Main Content -->
+    <div class="container mx-auto p-4">
+      <router-view />
     </div>
   </div>
 </template>
 
 <script>
 export default {
-  data() {
-    return {
-      form: {
-        theme: '',
-        card_count: 10,
-        style: 'simple',
-      },
-      cards: [],
-      pdfUrl: '',
-    };
-  },
-  methods: {
-    async generateGame() {
-      try {
-        const response = await fetch('http://localhost:8080/api/v1/generate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(this.form),
-        });
-        const data = await response.json();
-        this.cards = data.cards;
-        this.pdfUrl = data.pdfUrl;
-      } catch (error) {
-        console.error('Generation failed:', error);
-        alert('Generation failed, please try again later');
-      }
-    },
-  },
+  name: 'App',
 };
 </script>
 
 <style>
-@import 'tailwindcss/tailwind.css';
+.app-container {
+  min-height: 100vh;
+  background-color: #f7fafc;
+}
 </style>
