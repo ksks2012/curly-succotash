@@ -129,6 +129,10 @@ func setupSetting() error {
 	if err != nil {
 		return err
 	}
+	err = s.ReadSection("AI", &global.AISetting)
+	if err != nil {
+		return err
+	}
 
 	// TODO: run mode
 

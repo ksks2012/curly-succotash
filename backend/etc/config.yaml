@@ -22,3 +22,11 @@ Server:
   WriteTimeout: 60
 StoragePath:
   PDFFoldar: files
+AI:
+  APIKey: GOOGLE_API_KEY
+  Model: gemini-2.0-flash
+  Temperature: 1.0
+  TopK: 40
+  TopP: 0.95
+  MaxOutputTokens: 1024
+  Stream: False

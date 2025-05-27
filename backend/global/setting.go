@@ -11,4 +11,5 @@ var (
 	Logger             *logger.Logger
 	ServerSetting      *setting.ServerSettingS
 	StoragePathSetting *setting.StoragePathSettingS
+	AISetting          *setting.AISettingS
 )
