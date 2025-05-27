@@ -34,10 +34,11 @@ func (Model) TableName() string {
 // Game represents a board game entry
 type Game struct {
 	Model
-	Theme     string    `gorm:"type:text;not null" json:"theme"`
-	CardCount int       `gorm:"column:card_count;not null" json:"card_count"`
-	Style     string    `gorm:"type:text;not null" json:"style"`
-	CreatedAt time.Time `gorm:"type:datetime;not null" json:"created_at"`
+	Theme       string    `gorm:"type:text;not null" json:"theme"`
+	CardCount   int       `gorm:"column:card_count;not null" json:"card_count"`
+	Style       string    `gorm:"type:text;not null" json:"style"`
+	Description string    `gorm:"type:text" json:"description"`
+	CreatedAt   time.Time `gorm:"type:datetime;not null" json:"created_at"`
 }
 
 func (Game) TableName() string {
@@ -48,11 +49,13 @@ func (Game) TableName() string {
 type Card struct {
 	Model
 	GameID      int    `gorm:"not null;index" json:"game_id"`
+	Type        string `gorm:"type:text;not null" json:"type"` // Added: role, event, item
 	Name        string `gorm:"type:text;not null" json:"name"`
 	Description string `gorm:"type:text;not null" json:"description"`
 	Effect      string `gorm:"type:text;not null" json:"effect"`
 }
 
+// TableName specifies the table name for Card
 func (Card) TableName() string {
 	return "cards"
 }
@@ -63,6 +66,7 @@ type Meta struct {
 	Value int64  `gorm:"not null" json:"value"`
 }
 
+// TableName specifies the table name for Meta
 func (Meta) TableName() string {
 	return "meta"
 }
