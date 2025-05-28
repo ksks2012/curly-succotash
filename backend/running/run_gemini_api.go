@@ -42,14 +42,13 @@ func main() {
 	log.Println("Gemini AI client initialized successfully")
 
 	prompt := fmt.Sprintf(global.StoryPromptTemplate, "Fantasy Adventure")
-	story, err := aiClient.GenerateContent(prompt)
+	storyText, err := aiClient.GenerateContent(prompt)
 	if err != nil {
 		log.Fatalf("failed to generate content: %s", err)
 		return
 	}
-	log.Printf("Generated content: %s", story)
 
-	rolePrompt := fmt.Sprintf(global.RolePrompt, 1, story)
+	rolePrompt := fmt.Sprintf(global.RolePrompt, 1, storyText)
 	roleText, err := aiClient.GenerateContent(rolePrompt)
 	if err != nil {
 		log.Fatalf("failed to generate role text: %s", err)
@@ -57,7 +56,7 @@ func main() {
 	}
 	log.Printf("Generated role text: %s", roleText)
 
-	eventPrompt := fmt.Sprintf(global.EventPrompt, 1, story)
+	eventPrompt := fmt.Sprintf(global.EventPrompt, 1, storyText)
 	eventText, err := aiClient.GenerateContent(eventPrompt)
 	if err != nil {
 		log.Fatalf("failed to generate event text: %s", err)

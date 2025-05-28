@@ -13,6 +13,10 @@ type cardResponse struct {
 	Effect      string `json:"effect"`
 }
 
+var storyResponse = `{
+  "story_background": "The realm of Eldoria, nestled between the Whispering Woods and the jagged Peaks of Despair, once thrived under the benevolent rule of the Sunstone King. His power stemmed from the Orb of Aethelred, a mystical artifact radiating life and prosperity. But shadows stir. The Necromancer Malkor, banished centuries ago, has returned, corrupting the land with his undead legions. He seeks the Orb of Aethelred to plunge Eldoria into eternal darkness. A band of heroes must unite, brave treacherous landscapes, and confront Malkor before Eldoria is consumed by his malevolent reign."
+}`
+
 var roleResponse = `[
   {
     "name": "Lysandra",
@@ -56,6 +60,14 @@ var eventResponse = `[
 
 func main() {
 	cards := []model.Card{}
+
+	var story map[string]string
+	if err := json.Unmarshal([]byte(storyResponse), &story); err != nil {
+		fmt.Printf("Error unmarshalling AI response: %s\n", err)
+		return
+	}
+	fmt.Println("Story generated successfully")
+	fmt.Printf("Story: %s\n", story["story_background"])
 
 	var role []cardResponse
 	if err := json.Unmarshal([]byte(roleResponse), &role); err != nil {

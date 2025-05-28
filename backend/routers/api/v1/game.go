@@ -83,24 +83,36 @@ func GenerateGame(c *gin.Context) {
 
 	// Generate game description (story background)
 	prompt := fmt.Sprintf(global.StoryPromptTemplate, req.Theme)
-	story, err := aiClient.GenerateContent(prompt)
+	storyText, err := aiClient.GenerateContent(prompt)
 	if err != nil {
 		global.Logger.Errorf(ctx, "failed to generate story: %s", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to generate story: %s", err)})
 		return
 	}
 	if req.Description != "" {
-		story = req.Description // Override with user input if provided
+		storyText = req.Description // Override with user input if provided
 	}
-	fmt.Println("Generated story: %s", story)
-	global.Logger.Infof(ctx, "Generated story: %s", story)
+
+	var story map[string]string
+	if err := json.Unmarshal([]byte(storyText), &story); err != nil {
+		global.Logger.Errorf(ctx, "failed to parse story JSON: %s", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to parse story JSON: %s", err)})
+		return
+	}
+	if story["story_background"] == "" {
+		global.Logger.Errorf(ctx, "story background is empty")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "story background is empty"})
+		return
+	}
+	storyBackground := story["story_background"]
+	global.Logger.Infof(ctx, "Generated story: %s", storyBackground)
 
 	// Create game entry
 	game := model.Game{
 		Theme:       req.Theme,
 		CardCount:   req.CardCount,
 		Style:       req.Style,
-		Description: story,
+		Description: storyBackground,
 		CreatedAt:   time.Now(),
 		Model: model.Model{
 			CreatedBy:  "system",
@@ -116,7 +128,7 @@ func GenerateGame(c *gin.Context) {
 	}
 
 	// Generate cards (roles, events, items)
-	cards, err := generateCards(c, tx, aiClient, game.ID, req.CardCount, story)
+	cards, err := generateCards(c, tx, aiClient, game.ID, req.CardCount, storyBackground)
 	if err != nil {
 		global.Logger.Errorf(ctx, "failed to generate cards: %s", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to generate cards: %s", err)})
