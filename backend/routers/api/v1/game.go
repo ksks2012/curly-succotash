@@ -40,6 +40,27 @@ type cardResponse struct {
 }
 
 // GenerateGame generates a new board game using Gemini AI
+// GenerateGame handles the HTTP request to generate a new game instance.
+// It parses the incoming JSON request, initializes the AI client, generates a game story (description),
+// creates a new game record in the database, generates associated cards (roles, events, items),
+// and saves related metadata such as plot points and objective completion status.
+// On success, it returns the generated game ID and a success message; on failure, it returns an appropriate error response.
+//
+// Expected JSON request body:
+//
+//	{
+//	  "theme": "string",         // Theme of the game
+//	  "card_count": int,         // Number of cards to generate
+//	  "style": "string",         // Style of the game
+//	  "description": "string"    // (Optional) Custom game description
+//	}
+//
+// Responses:
+//
+//	200 OK:   { "game_id": int, "message": "Game generated successfully" }
+//	400 Bad Request: { "error": "error message" }
+//	429 RESOURCE_EXHAUSTED: { "error": "You exceeded your current quota" }
+//	500 Internal Server Error: { "error": "error message" }
 func GenerateGame(c *gin.Context) {
 	var req GenerateGameRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
