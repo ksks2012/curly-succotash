@@ -55,7 +55,7 @@ func NewRouter() *gin.Engine {
 		apiv1.GET("/games", v1.ListGames)
 		apiv1.GET("/games/:id", v1.GetGame)
 		// TODO:
-		apiv1.GET("/generate-pdf/:id", v1.GeneratePDF)
+		apiv1.GET("/generate-pdf/:id", v1.GenerateHTMLPDF)
 	}
 
 	return r

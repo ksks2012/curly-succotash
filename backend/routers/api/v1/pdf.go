@@ -1,7 +1,6 @@
 package v1
 
 import (
-	"context"
 	"curly-succotash/backend/global"
 	"curly-succotash/backend/internal/model"
 	"fmt"
@@ -15,7 +14,7 @@ import (
 
 func GeneratePDF(c *gin.Context) {
 	id := c.Param("id")
-	ctx := context.Background()
+	ctx := c.Request.Context()
 	var game model.Game
 	if err := global.DBEngine.WithContext(ctx).Where("id = ? AND is_del = 0", id).First(&game).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("game not found: %s", err)})
