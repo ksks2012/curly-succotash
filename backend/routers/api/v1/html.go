@@ -16,6 +16,21 @@ import (
 )
 
 // GenerateHTMLPDF generates a PDF using HTML and wkhtmltopdf
+// GenerateHTMLPDF handles the HTTP request to generate a PDF file from the HTML representation
+// of a board game and its associated cards. It fetches the game and its cards from the database,
+// renders an HTML template using the game and card data, converts the HTML to a PDF using wkhtmltopdf,
+// saves the PDF to the server, and serves the generated PDF file as a response.
+//
+// API
+// @Summary      Generate PDF for a board game
+// @Description  Generates a PDF file containing the board game's details and its cards, and returns the PDF file.
+// @Tags         games
+// @Produce      application/pdf
+// @Param        id   path      string  true  "Game ID"
+// @Success      200  {file}    file    "PDF file"
+// @Failure      404  {object}  map[string]string  "game not found"
+// @Failure      500  {object}  map[string]string  "internal server error"
+// @Router       /api/v1/games/{id}/pdf [get]
 func GenerateHTMLPDF(c *gin.Context) {
 	id := c.Param("id")
 	ctx := c.Request.Context()

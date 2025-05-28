@@ -223,6 +223,18 @@ func generateCards(c *gin.Context, tx *gorm.DB, aiClient *ai.GeminiClient, gameI
 }
 
 // GetGame retrieves a stored game by ID
+// GetGame handles GET requests to retrieve a game by its ID along with its associated cards.
+//
+// @Summary      Get game by ID
+// @Description  Retrieves a game and its cards by the provided game ID.
+// @Tags         game
+// @Accept       json
+// @Produce      json
+// @Param        id   path      string  true  "Game ID"
+// @Success      200  {object}  GameResponse
+// @Failure      404  {object}  gin.H  "game not found"
+// @Failure      500  {object}  gin.H  "failed to fetch cards"
+// @Router       /api/v1/game/{id} [get]
 func GetGame(c *gin.Context) {
 	id := c.Param("id")
 	var game model.Game
