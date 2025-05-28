@@ -31,6 +31,15 @@ go mod tidy
 go build curly-succotash/backend/cmd/${PROJECT_NAME}
 ```
 
+# Run
+
+## FrontEnd
+
+- dev
+    ```
+    npm run dev
+    ```
+    
 # Test
 
 ```

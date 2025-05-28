@@ -37,6 +37,16 @@ type StoragePathSettingS struct {
 	PDFFoldar string
 }
 
+type AISettingS struct {
+	APIKey          string
+	Model           string
+	Temperature     float32
+	TopP            float32
+	TopK            float32
+	MaxOutputTokens int32
+	Stream          bool
+}
+
 var sections = make(map[string]interface{})
 
 func (s *Setting) ReadSection(k string, v interface{}) error {

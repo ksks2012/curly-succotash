@@ -75,7 +75,7 @@ func (g *Generator) Generate(c *gin.Context) {
 	// Save cards using GORM
 	for _, card := range cards {
 		dbCard := model.Card{
-			GameID:      int(gameID),
+			GameID:      gameID,
 			Name:        card.Name,
 			Description: card.Description,
 			Effect:      card.Effect,

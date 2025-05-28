@@ -50,6 +50,12 @@ func NewRouter() *gin.Engine {
 	{
 		// Generate game
 		apiv1.POST("/generate", generator.Generate)
+		apiv1.POST("/game", v1.GenerateGame)
+
+		apiv1.GET("/games", v1.ListGames)
+		apiv1.GET("/games/:id", v1.GetGame)
+		// TODO:
+		apiv1.GET("/generate-pdf/:id", v1.GeneratePDF)
 	}
 
 	return r
