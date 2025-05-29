@@ -27,7 +27,6 @@ type DatabaseSettingS struct {
 }
 
 type ServerSettingS struct {
-	RunMode      string
 	HttpPort     string
 	ReadTimeout  time.Duration
 	WriteTimeout time.Duration

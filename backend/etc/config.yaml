@@ -1,5 +1,5 @@
 App:
-  RunMode: debug
+  RunMode: release
   LogSavePath: storage/logs
   LogFileName: app
   LogFileExt: .log
@@ -16,7 +16,6 @@ Database:
   MaxOpenConns: 30
   Path: ./var/db/games.db
 Server:
-  RunMode: debug
   HttpPort: 8080
   ReadTimeout: 60
   WriteTimeout: 60
