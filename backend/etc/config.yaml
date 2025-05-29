@@ -14,7 +14,7 @@ Database:
   ParseTime: True
   MaxIdleConns: 10
   MaxOpenConns: 30
-  Path: ./var/db/games.db
+  Path: /app/games.db
 Server:
   HttpPort: 8080
   ReadTimeout: 60

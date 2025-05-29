@@ -1,0 +1,31 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: docker/dockerfile.yml
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./backend/files:/app/files
+      - ./backend/storage/logs:/app/storage/logs
+      - ./backend/var/db/games.db:/app/games.db
+      - ./backend/etc/config.yaml:/app/etc/config.yaml
+    environment:
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+    networks:
+      - app-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: docker/dockerfile.yml
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
