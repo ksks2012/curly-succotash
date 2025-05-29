@@ -1,4 +1,3 @@
-// example main function
 package main
 
 import (
@@ -16,6 +15,7 @@ import (
 	"golang.org/x/sys/unix"
 	"gopkg.in/natefinch/lumberjack.v2"
 
+	_ "curly-succotash/backend/docs"
 	"curly-succotash/backend/global"
 	"curly-succotash/backend/internal/dao/config"
 	"curly-succotash/backend/internal/model"
@@ -53,6 +53,26 @@ func init() {
 	}
 }
 
+// Package main implements the entry point for the curly-succotash backend server.
+//
+// This server uses the Gin web framework and provides RESTful APIs for the application.
+// It supports configuration via flags and config files, structured logging with log rotation,
+// graceful shutdown on system signals, and database initialization and migration.
+//
+// # Swagger
+// @title Curly Succotash Backend API
+// @version 1.0
+// @description This is the backend server for the Curly Succotash application.
+// @termsOfService http://swagger.io/terms/
+// @contact.name API Support
+// @contact.email support@curly-succotash.local
+// @license.name MIT
+// @host localhost:8080
+// @BasePath /api/v1
+//
+// The main function initializes configuration, logging, database connections, and starts the HTTP server.
+// It also handles graceful shutdown on receiving interrupt or termination signals.
+// example main function
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

@@ -1,5 +1,5 @@
 App:
-  RunMode: release
+  RunMode: debug
   LogSavePath: storage/logs
   LogFileName: app
   LogFileExt: .log

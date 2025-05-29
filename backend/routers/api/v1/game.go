@@ -39,28 +39,19 @@ type cardResponse struct {
 	Effect      string `json:"effect"`
 }
 
-// GenerateGame generates a new board game using Gemini AI
-// GenerateGame handles the HTTP request to generate a new game instance.
-// It parses the incoming JSON request, initializes the AI client, generates a game story (description),
-// creates a new game record in the database, generates associated cards (roles, events, items),
-// and saves related metadata such as plot points and objective completion status.
-// On success, it returns the generated game ID and a success message; on failure, it returns an appropriate error response.
+// GenerateGame generates a new board game using Gemini AI.
 //
-// Expected JSON request body:
-//
-//	{
-//	  "theme": "string",         // Theme of the game
-//	  "card_count": int,         // Number of cards to generate
-//	  "style": "string",         // Style of the game
-//	  "description": "string"    // (Optional) Custom game description
-//	}
-//
-// Responses:
-//
-//	200 OK:   { "game_id": int, "message": "Game generated successfully" }
-//	400 Bad Request: { "error": "error message" }
-//	429 RESOURCE_EXHAUSTED: { "error": "You exceeded your current quota" }
-//	500 Internal Server Error: { "error": "error message" }
+// @Summary      Generate a new board game
+// @Description  Generates a new board game using Gemini AI based on the provided theme, card count, style, and optional description. The endpoint creates a game record, generates cards, and stores related metadata.
+// @Tags         game
+// @Accept       json
+// @Produce      json
+// @Param        body  body      GenerateGameRequest  true  "Game generation request"
+// @Success      200   {object}  map[string]interface{}  "Game generated successfully"
+// @Failure      400   {object}  map[string]string       "Bad request"
+// @Failure      429   {object}  map[string]string       "Quota exceeded"
+// @Failure      500   {object}  map[string]string       "Internal server error"
+// @Router       /api/v1/game [post]
 func GenerateGame(c *gin.Context) {
 	var req GenerateGameRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -232,8 +223,8 @@ func generateCards(c *gin.Context, tx *gorm.DB, aiClient *ai.GeminiClient, gameI
 // @Produce      json
 // @Param        id   path      string  true  "Game ID"
 // @Success      200  {object}  GameResponse
-// @Failure      404  {object}  gin.H  "game not found"
-// @Failure      500  {object}  gin.H  "failed to fetch cards"
+// @Failure      404  {object}  map[string]string  "game not found"
+// @Failure      500  {object}  map[string]string  "failed to fetch cards"
 // @Router       /api/v1/game/{id} [get]
 func GetGame(c *gin.Context) {
 	id := c.Param("id")

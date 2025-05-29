@@ -16,7 +16,7 @@ import (
 // @Tags         games
 // @Produce      json
 // @Success      200  {array}   model.Game
-// @Failure      500  {object}  gin.H{"error": string}
+// @Failure      500  {object}  map[string]string
 // @Router       /api/v1/games [get]
 func ListGames(c *gin.Context) {
 	var games []model.Game

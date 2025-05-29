@@ -4,13 +4,14 @@ import (
 	"net/http"
 	"time"
 
+	_ "curly-succotash/backend/docs"
 	"curly-succotash/backend/global"
-
+	"curly-succotash/backend/pkg/limiter"
 	v1 "curly-succotash/backend/routers/api/v1"
 
-	"curly-succotash/backend/pkg/limiter"
-
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 var methodLimiters = limiter.NewMethodLimiter().AddBuckets(
@@ -34,9 +35,12 @@ func NewRouter() *gin.Engine {
 		}
 		c.Next()
 	})
-	if global.ServerSetting.RunMode == "debug" {
+	if global.AppSetting.RunMode == "debug" {
 		r.Use(gin.Logger())
 		r.Use(gin.Recovery())
+	}
+	if global.AppSetting.RunMode != "release" {
+		r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	}
 	// TODO: middlewares
 
